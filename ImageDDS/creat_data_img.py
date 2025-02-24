@@ -85,7 +85,7 @@ def creat_data(datafile, cellfile):
     file2 = cellfile
     cell_features = []
     with open(file2) as csvfile:
-        csv_reader = csv.reader(csvfile)  # 使用csv.reader读取csvfile中的文件
+        csv_reader = csv.reader(csvfile)  
         for row in csv_reader:
             cell_features.append(row)
     cell_features = np.array(cell_features)
