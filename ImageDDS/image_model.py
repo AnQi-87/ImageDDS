@@ -6,49 +6,25 @@ from torch_geometric.nn import global_max_pool as gmp
 from torch_geometric.nn import SAGPooling
 import pandas as pd
 import numpy as np
-
 from losses import SupConLoss
-
 import torchvision
 
-
-
-#自适应特征融合   
 class AttentionFusion_auto(torch.nn.Module):
     def __init__(self, n_dim_input1, n_dim_input2, lambda_1=1, lambda_2=1):
         super(AttentionFusion_auto, self).__init__()
         self.n_dim_input1, self.n_dim_input2 = n_dim_input1, n_dim_input2
         self.lambda_1 = lambda_1
         self.lambda_2 = lambda_2
-
-        #自适应特征融合
-        # self.w = nn.Parameter(torch.ones(2))
-
-        #MLP特征融合
         self.linear = nn.Linear(2 * n_dim_input1, n_dim_input2)
-
     def forward(self, input1, input2):
-
-        # 自适应融合
-        # w1 = torch.exp(self.w[0]/torch.sum(torch.exp(self.w)))
-        # w2 = torch.exp(self.w[1]/torch.sum(torch.exp(self.w)))
-        # return w1 * input1 + w2 * input2
-
-        #MLP特征更新新加的11月21号
         mid_emb = torch.cat((input1, input2), 1)
         return F.relu(self.linear(mid_emb))
-
-        # 自定义参数融合
-        
-        #return self.lambda_1 * input1 + self.lambda_2 * input2
 
 class ImageDDS(torch.nn.Module):
     def __init__(self, n_output = 1, n_filters=32, embed_dim=128, num_features_xd=64, num_features_xt=954, output_dim=128, dropout=0.2,
                  use_cl=False, use_image_fusion=False,img_pretrained=True, temperature=0.07, base_temperature=0.07,
                  lambda_fusion_graph=1, lambda_fusion_image=1, batch_size = 128, device = torch.device('cpu')):
-
         super(ImageDDS, self).__init__()
-
         self.activate = nn.LeakyReLU()
         self.dropout = nn.Dropout(dropout)
 
@@ -56,10 +32,9 @@ class ImageDDS(torch.nn.Module):
         self.n_output = n_output 
         self.drug_conv1 = TransformerConv(78, num_features_xd * 2,  heads = 2)
         self.drug_conv2 = TransformerConv(num_features_xd * 4, num_features_xd * 8, heads = 2)
-        
+
         self.drug_fc_g1 = torch.nn.Linear(num_features_xd * 16, num_features_xd * 8)
         self.drug_fc_g2 = torch.nn.Linear(num_features_xd * 8, output_dim )
-
 
         # DL cell featrues
         self.reduction = nn.Sequential(
@@ -85,16 +60,14 @@ class ImageDDS(torch.nn.Module):
             self.fusion = AttentionFusion_auto(n_dim_input1=output_dim, n_dim_input2=output_dim, lambda_1=lambda_fusion_graph, lambda_2=lambda_fusion_image)
 
        
-       
-        #最后一层MLP处理
         self.final_mlp = nn.Sequential(
-            nn.Linear(output_dim*3, 1024),  # 第一层
+            nn.Linear(output_dim*3, 1024),  
             nn.BatchNorm1d(1024),
             nn.LeakyReLU(),
-            nn.Linear(1024, 256),             # 第二层
+            nn.Linear(1024, 256),             
             nn.BatchNorm1d(256),
             nn.LeakyReLU(),
-            nn.Linear(256, n_output)         # 输出层  
+            nn.Linear(256, n_output)          
         )
 
 
@@ -113,12 +86,8 @@ class ImageDDS(torch.nn.Module):
         ind = self.get_col_index(d)
         ind = pd.DataFrame(ind)
         ind.to_csv('data/case_study/' + path + '_index.csv', header=0, index=0)
-        # 下面是load操作
-        # read_dictionary = np.load('my_file.npy').item()
-        # d = pd.DataFrame(d)
-        # d.to_csv('data/result/' + path + '.csv', header=0, index=0)
  
-    #GAT
+    
     def graph_channel(self, x, edge_index, batch):
         # deal drug1
         x = self.drug1_gcn1(x, edge_index)
@@ -142,22 +111,17 @@ class ImageDDS(torch.nn.Module):
         # deal drug1
         x1 = self.drug_conv1(x1, edge_index1)
         x1 = self.activate(x1)
-
         x1 = self.drug_conv2(x1, edge_index1)
         x1 = self.activate(x1)
-
-        x1 = gmp(x1, batch1)       # global max pooling    
-
+        x1 = gmp(x1, batch1)       # global max pooling   
+        
         # flatten
         x1 = self.drug_fc_g1(x1)
         x1 = self.activate(x1)
         x1 = self.dropout(x1)
-
         x1 = self.drug_fc_g2(x1)
         x1 = self.dropout(x1)
-
         x1_graph = F.normalize(x1, 2, 1)
-
         # print("x1_graph:{}".format(x1_graph))
 
         if self.use_img_fusion or self.use_cl:
@@ -176,20 +140,16 @@ class ImageDDS(torch.nn.Module):
         # deal drug2
         x2 = self.drug_conv1(x2, edge_index2)
         x2 = self.activate(x2)
-
         x2 = self.drug_conv2(x2, edge_index2)
         x2 = self.activate(x2)
-      
         x2 = gmp(x2, batch2)       # global max pooling    
 
         # flatten
         x2 = self.drug_fc_g1(x2)
         x2 = self.activate(x2)
         x2 = self.dropout(x2)
-        
         x2 = self.drug_fc_g2(x2)
         x2 = self.dropout(x2)
-
         x2_graph = F.normalize(x2, 2, 1)
 
         if self.use_img_fusion or self.use_cl:
@@ -207,18 +167,10 @@ class ImageDDS(torch.nn.Module):
         cell_vector = F.normalize(cell, 2, 1)
         cell_vector = self.reduction(cell_vector)
 
-
-        #拼接特征
         xc = torch.cat([x1, x2, cell_vector], dim=1)
         xc = F.normalize(xc, 2, 1) 
-
-        # dnn_x = self.dnn_network(xc)
-        #传入mlp
-        # final = self.dense_final(dnn_x)
-        final = self.final_mlp(xc)
-        #输出预测
+        final = self.final_mlp(xc)      
         outputs = torch.sigmoid(final.squeeze(1))
-
 
         data_dict = {
             "img_idx_1": data1.img_idx,
@@ -227,19 +179,15 @@ class ImageDDS(torch.nn.Module):
             "img_idx_2": data2.img_idx,
             "x2_graph": x2_graph,
             "x2_image": x2_image
-        }
-        
+        }        
         return outputs, data_dict
     
     def cal_cl_loss(self, data_dict):
         img_idx_1, img_idx_2 = data_dict["img_idx_1"], data_dict["img_idx_2"]
         x1_graph, x1_image, x2_graph, x2_image = data_dict["x1_graph"], data_dict["x1_image"], data_dict["x2_graph"], \
         data_dict["x2_image"]
-
-        # x1_graph 和 x1_image，x2_graph 和 x2_image 要接近
         loss = (self.cl_loss(x1_graph, x1_image, labels=img_idx_1) + self.cl_loss(x2_graph, x2_image,
                                                                                   labels=img_idx_2)) / 2
-
         return loss
 
 
