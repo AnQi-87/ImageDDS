@@ -97,7 +97,7 @@ class TestbedDataset(InMemoryDataset):
                                 img_idx=img_idx)
             cell = self.get_cell_feature(target, xt_featrue)
 
-            if cell is False : # 如果读取cell失败则中断程序
+            if cell is False : 
                 print('cell', cell)
                 sys.exit()
 
