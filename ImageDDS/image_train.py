@@ -14,9 +14,7 @@ import argparse
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 
 result_name = 'Image'
-
 modeling = ImageDDS
-
 
 parser = argparse.ArgumentParser(description='PyTorch Implementation of DDs')
 # image fusing graph
@@ -123,14 +121,12 @@ def split_dataset(dataset, ratio):
 
 
 # CPU or GPU
-
 if torch.cuda.is_available():
     device = torch.device('cuda:0')
     print('The code uses GPU...')
 else:
     device = torch.device('cpu')
     print('The code uses CPU!!!')
-
 
 
 TRAIN_BATCH_SIZE = args.TRAIN_BATCH_SIZE
@@ -151,14 +147,11 @@ dataset = 'new_labels_0_10'
 print('开始处理源文件....')
 drug1, drug2, cell, label, smile_graph, cell_features, smile_imageidx = creat_data(dataset, cellfile)
 print('从源文件提取特征成功！')
-
 print('载入数据...')
 drug1_data = TestbedDataset(root='data', dataset=dataset + '_drug1', img_root=f"data/processed/{dataset}/images", xd=drug1, xt=cell, y=label, smile_graph=smile_graph,
                             xt_featrue=cell_features, smile_imageidx=smile_imageidx)
 drug2_data = TestbedDataset(root='data', dataset=dataset + '_drug2', img_root=f"data/processed/{dataset}/images", xd=drug2, xt=cell, y=label, smile_graph=smile_graph,
                             xt_featrue=cell_features, smile_imageidx=smile_imageidx)
-
-
 print('载入数据完成！')
 
 lenth = len(drug1_data)
@@ -167,7 +160,6 @@ print('lenth', lenth)
 print('pot', pot)
 
 random_num = random.sample(range(0, lenth), lenth)  
-
 folder_path = './result/' + result_name
 if not os.path.exists(folder_path):
     os.makedirs(folder_path)
@@ -177,21 +169,16 @@ for i in range(5):
 
     test_num = random_num[pot * i:pot * (i + 1)]  
     train_num = random_num[:pot * i] + random_num[pot * (i + 1):] 
-
     drug1_data_train = drug1_data[train_num]  
     drug1_data_test = drug1_data[test_num]  
     drug1_loader_train = DataLoader(drug1_data_train, batch_size=TRAIN_BATCH_SIZE,
                                     shuffle=None) 
     drug1_loader_test = DataLoader(drug1_data_test, batch_size=TRAIN_BATCH_SIZE,
                                    shuffle=None)  
-
-
     drug2_data_test = drug2_data[test_num]
     drug2_data_train = drug2_data[train_num]
     drug2_loader_train = DataLoader(drug2_data_train, batch_size=TRAIN_BATCH_SIZE, shuffle=None)
     drug2_loader_test = DataLoader(drug2_data_test, batch_size=TRAIN_BATCH_SIZE, shuffle=None)
-
-    
     model = modeling(use_image_fusion=args.use_image_fusion, use_cl=args.use_cl, temperature=args.temperature,
                      base_temperature=args.base_temperature, lambda_fusion_graph=args.lambda_fusion_graph,
                      lambda_fusion_image=args.lambda_fusion_image, batch_size=TRAIN_BATCH_SIZE, device=device).to(device)
@@ -249,4 +236,3 @@ for i in range(5):
         
         print('best_auc', best_auc)  
     save_AUCs("best_auc:" + str(best_auc), file_AUCs)
-    # torch.save(model.state_dict(), 'save_model/'+ result_name + '_'+ str(i)+'_epoch=400.pt')
