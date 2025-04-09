@@ -120,20 +120,8 @@ def creat_data(datafile, cellfile):
         df = pd.read_csv('data/' + datasets + '.csv')
         drug1, drug2, cell, label = list(df['drug1']), list(df['drug2']), list(df['cell']), list(df['label'])
         drug1, drug2, cell, label = np.asarray(drug1), np.asarray(drug2), np.asarray(cell), np.asarray(label)
-        # make data PyTorch Geometric ready
-
-        # print('开始创建数据')
-        # TestbedDataset(root='data', dataset=datafile + '_drug1', xd=drug1, xt=cell, xt_featrue=cell_features, y=label,smile_graph=smile_graph, smile_imageidx=smile_imageidx)
-        # TestbedDataset(root='data', dataset=datafile + '_drug2', xd=drug2, xt=cell, xt_featrue=cell_features, y=label,smile_graph=smile_graph, smile_imageidx=smile_imageidx)
-        # print('创建数据成功')
-        # print('preparing ', datasets + '_.pt in pytorch format!')
-
+        
         return drug1, drug2, cell, label, smile_graph, cell_features, smile_imageidx
-    #
-    #     print(processed_data_file_train, ' have been created')
-    #
-    # else:
-    #     print(processed_data_file_train, ' are already created')
 
 if __name__ == "__main__":
     # datafile = 'prostate'
