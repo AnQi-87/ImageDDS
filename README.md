@@ -25,4 +25,4 @@ In synergistic drug combination therapy, computational screening has become a cr
 
 - Run the image_train.py file then
 
-`python image_train.py --use_image_fusion --use_cl --lambda_cl 0.15 --temperature 0.1 --base_temperature 0.075 --TRAIN_BATCH_SIZE 128 --TEST_BATCH_SIZE 128`
+`python image_train.py --use_image_fusion --use_cl --lambda_cl 0.2 --temperature 0.1 --base_temperature 0.075 --TRAIN_BATCH_SIZE 128 --TEST_BATCH_SIZE 128`
